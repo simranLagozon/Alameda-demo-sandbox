@@ -99,6 +99,13 @@ from urllib.parse import quote
 # Set up static files and templates
 app.mount("/stats", StaticFiles(directory="stats"), name="stats")
 templates = Jinja2Templates(directory="templates")
+try:
+    blob_service_client = BlobServiceClient.from_connection_string(AZURE_STORAGE_CONNECTION_STRING)
+    print("Blob service client initialized successfully.")
+except Exception as e:
+    print(f"Error initializing BlobServiceClient: {e}")
+    # Handle the error appropriately, possibly exiting the application
+    raise  # Re-raise the exception to prevent the app from starting
 
 # Initialize OpenAI API key and model
 
@@ -155,6 +162,53 @@ class ChartRequest(BaseModel):
                 "chart_type": "Line Chart"
             }
         }
+        
+class QueryInput(BaseModel):
+    """
+    Pydantic model for user query input.
+    """
+    query: str
+@app.post("/add_to_faqs")
+@app.post("/add_to_faqs/")
+async def add_to_faqs(data: QueryInput):
+    """
+    Adds a user query to the FAQ CSV file on Azure Blob Storage.
+
+    Args:
+        data (QueryInput): The user query.
+
+    Returns:
+        JSONResponse: A JSON response indicating success or failure.
+    """
+    query = data.query.strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="Invalid query!")
+
+    blob_name = 'table_files/Demo_questions.csv'
+
+    try:
+        # Get the blob client
+        blob_client = blob_service_client.get_blob_client(container=AZURE_CONTAINER_NAME, blob=blob_name)
+
+        try:
+            # Download the blob content
+            blob_content = blob_client.download_blob().content_as_text()
+        except ResourceNotFoundError:
+            # If the blob doesn't exist, create a new one with a header if needed
+            blob_content = "question\n"  # Replace with your actual header
+
+        # Append the new query to the existing CSV content
+        updated_csv_content = blob_content + f"{query}\n"  # Append new query
+
+        # Upload the updated CSV content back to Azure Blob Storage
+        blob_client.upload_blob(updated_csv_content.encode('utf-8'), overwrite=True)
+
+        return {"message": "Query added to FAQs successfully and uploaded to Azure Blob Storage!"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
 def download_as_excel(data: pd.DataFrame, filename: str = "data.xlsx"):
     """
     Converts a Pandas DataFrame to an Excel file and returns it as a stream.
