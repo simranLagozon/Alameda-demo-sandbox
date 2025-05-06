@@ -1016,10 +1016,6 @@ body {
                 <span class="material-symbols-rounded">email</span>
                 <span class="link-text">Email</span>
             </button>
-            <button class="action-btn faq">
-                <span class="material-symbols-rounded">help_outline</span>
-                <span class="link-text">Add to FAQs</span>
-            </button>
         </div>
 
         <a href="#" class="settings-link" id="settings-link">
@@ -1121,19 +1117,6 @@ body {
         </div>
     </div>
 
-    <div class="action-modal" id="faq-modal">
-        <div class="modal-content">
-            <button class="modal-close">&times;</button>
-            <h3 class="modal-title">Add to FAQs</h3>
-            <div class="modal-body" id="faq-modal-body">
-                <!-- Content will be inserted here -->
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn modal-btn-secondary modal-close">Cancel</button>
-                <button class="modal-btn modal-btn-primary" id="confirm-faq">Add to FAQs</button>
-            </div>
-        </div>
-    </div>
 
 
     <script>
@@ -1182,9 +1165,9 @@ body {
         document.body.appendChild(visualizationPanel);
     
         // ✅ Constants
-        //const API_BASE_URL = "http://127.0.0.1:8000";
+        const API_BASE_URL = "http://127.0.0.1:8000";
           //const API_BASE_URL = "https://alameda-demo-ahf5ghfkfpgeb4gw.centralindia-01.azurewebsites.net";
-        const API_BASE_URL = "https://alameda-demo-sandbox-esaxc5epgae0cueg.centralindia-01.azurewebsites.net";
+        //const API_BASE_URL = "https://alameda-demo-sandbox-esaxc5epgae0cueg.centralindia-01.azurewebsites.net";
 
     
         let isSubmitting = false;
@@ -1956,6 +1939,68 @@ function addPaginationToVisualizationTable(uniqueId, table) {
                 
                 messageDiv.appendChild(feedbackDiv);
             }
+                            // Add FAQ button for user messages
+    if (role === "user") {
+        const faqButton = document.createElement("button");
+        faqButton.className = "feedback-btn";
+        faqButton.innerHTML = `
+            <span class="material-symbols-rounded">help_outline</span> Add to FAQs
+        `;
+        faqButton.style.marginTop = "10px";
+        faqButton.style.display = "inline-flex";
+        faqButton.style.alignItems = "center";
+        faqButton.style.gap = "6px";
+        
+        faqButton.addEventListener("click", async () => {
+            const userQuery = contentDiv.textContent.trim();
+            if (!userQuery) {
+                alert("No query to add to FAQs");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/add_to_faqs/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        query: userQuery,
+                        answer: "" // You can leave this empty or add the AI response if available
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || "Failed to add to FAQs");
+                }
+
+                // Show success message
+                const successMsg = document.createElement("div");
+                successMsg.style.color = "#4CAF50";
+                successMsg.style.marginTop = "5px";
+                successMsg.textContent = "Added to FAQs successfully!";
+                messageDiv.appendChild(successMsg);
+                
+                // Remove the message after 2 seconds
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 10000);
+                
+            } catch (error) {
+                console.error("Error:", error);
+                const errorMsg = document.createElement("div");
+                errorMsg.style.color = "#F44336";
+                errorMsg.style.marginTop = "5px";
+                errorMsg.textContent = error.message;
+                messageDiv.appendChild(errorMsg);
+            }
+        });
+        
+        messageDiv.appendChild(faqButton);
+    }
+
     
             // Append to chat results
             const chatResults = document.getElementById("chat-results");
