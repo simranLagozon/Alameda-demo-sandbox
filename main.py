@@ -33,7 +33,7 @@ from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core import Settings
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 import json
-
+from azure.storage.blob import BlobServiceClient
 
 from fastapi import FastAPI, Form, HTTPException, Query, UploadFile, File
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
