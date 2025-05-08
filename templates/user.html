@@ -1138,6 +1138,8 @@ body {
         const toolCheckboxes = document.querySelectorAll('input[name="settings-option"]');
         // File Upload Functionality
         const addFileBtn = document.getElementById("add-file-btn");
+        addFileBtn.disabled = true;
+
         const fileInput = document.createElement("input");
         fileInput.type = "file";
         fileInput.multiple = true;
